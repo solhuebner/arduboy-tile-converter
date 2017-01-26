@@ -28,26 +28,6 @@
         	background-color: #FEFEFC;
         	border: 1px solid #463C3C;
         }
-        /*.modal{
-        	display: none; 
-    		position: fixed; 
-    		z-index: 100; 
-    		left: 0;
-    		top: 0;
-    		width: 100%; 
-    		height: 100%;
-    		overflow: auto; 
-    		background-color: rgb(0,0,0); 
-    		background-color: rgba(0,0,0,0.4); 
-        }
-        .modal-content {
-		    background-color: #FEFEFC;
-		    margin: 15% auto;
-		    padding: 20px;
-		    border: 2px solid #463C3C;
-		    border-radius: 10px;
-		    width: 700px; 
-		}*/
 	</style>
 	<script language="JavaScript">
 		function setup(body){
@@ -60,8 +40,6 @@
 		    body.ondrop = function(e) {
 		        // Prevent the browser from showing the dropped file
 		        e.preventDefault();
-
-		        //document.getElementById('modal').style.display = "block";
 
 		        // Get the image data
 		        var imageData = getImageData(e);
@@ -87,30 +65,33 @@
 		        var droppedImage = new Image();
 		        droppedImage.src = event.target.result;
 
+		        var imgNW = droppedImage.naturalWidth;
+		        var imgNH = droppedImage.naturalHeight;
 		        var zoom = 1;
-		        switch(droppedImage.naturalWidth){
+		        switch(imgNW){
 		        	case 8: zoom = 4;
 		        		break;
 		        	case 16: zoom = 2;
 		        		break;
-		        	case 24: zoom = 1.5;
+		        	case 24: zoom = 4/3;
 		        		break;
 		        	case 24: zoom = 1;
 		        		break;
 		        }
-		        var imgW = droppedImage.naturalWidth*zoom;
-		        var imgH = imgW;
+		        var tileW = imgNW*zoom;
+		        var tileH = tileW;
 
-		        // Create canvas for image
+		        // Create canvas for tiles
 		        var droppedImageCanvas = document.createElement("canvas");
-		        var canvasWidth = Math.floor(700/(imgW+2)) * (imgW+2) -2;
-		        var canvasHeight = Math.ceil(droppedImage.naturalHeight/droppedImage.naturalWidth/Math.floor(700/(imgW)+2)) * (imgH+2) -2;
+		        var canvasWidth = Math.floor(700/(tileW+2)) * (tileW+2) -2;
+		        var canvasHeight = Math.ceil(imgNH/imgNW/Math.floor(700/(tileW+2))) * (tileH+2) -2;
 		        droppedImageCanvas.width = canvasWidth;
 		        droppedImageCanvas.height = canvasHeight;
 
+		        // Create invisible canvas for original image
 		        var invisImageCanvas = document.createElement("canvas");
-		        invisImageCanvas.width = droppedImage.naturalWidth;
-		        invisImageCanvas.height = droppedImage.naturalHeight;
+		        invisImageCanvas.width = imgNW;
+		        invisImageCanvas.height = imgNH;
 		        invisImageCanvas.style.display = "none";
 
 		        // Create code container
@@ -133,75 +114,46 @@
 
 		        // Create context for drawing
 		        var droppedImageContext = droppedImageCanvas.getContext("2d");
+		        droppedImageContext.imageSmoothingEnabled = false;
 		        var invisImageContext = invisImageCanvas.getContext("2d");
 
-		        // Draw the image
+		        // Draw the image on an invisible canvas to generate the code
 		        invisImageContext.drawImage(droppedImage, 0, 0);
 
-		        for(var i = 0, x = 0, y = 0, clip; i < droppedImage.naturalHeight/droppedImage.naturalWidth; i++){
-		        	if(x+imgW+2 <= canvasWidth){
-		        		x += imgW+2;
+		        // Clip the image and draw individual tiles on the canvas with 2px spacing inbetween
+		        for(var i = 0, x = 0, y = 0, tile; i < imgNH/imgNW; i++){
+		        	if(x+tileW+2 <= canvasWidth){
+		        		x += tileW+2;
 		        	}
 		        	else{
 		        		x = 0;
-		        		y += imgH+2 
+		        		y += tileH+2 
 		        	}
 		        	if(i === 0){x = 0;}
-		        	clip = getClippedRegion(droppedImage, 0, (i*droppedImage.naturalWidth)-1, droppedImage.naturalWidth, droppedImage.naturalWidth, zoom);
-		        	droppedImageContext.drawImage(clip, x, y);
+		        	droppedImageContext.drawImage(droppedImage, 0, i*imgNW, imgNW, imgNW, x, y, tileW, tileH);
 		        }
 
+		        // Draw raster between tiles on the canvas
 		        droppedImageContext.beginPath();
-		        for(var j = 1; j <= Math.floor(700/(imgW+2)); j++){
-		        	droppedImageContext.moveTo(j*imgW+1+(j-1)*2, 0);
-		        	droppedImageContext.lineTo(j*imgW+1+(j-1)*2, canvasHeight);
+		        for(var j = 1; j <= Math.floor(700/(tileW+2)); j++){
+		        	droppedImageContext.moveTo(j*tileW+1+(j-1)*2, 0);
+		        	droppedImageContext.lineTo(j*tileW+1+(j-1)*2, canvasHeight);
 		        }
-		        for(var k = 1; k <= Math.ceil(droppedImage.naturalHeight/droppedImage.naturalWidth/Math.floor(700/(imgW)+2)); k++){
-		        	droppedImageContext.moveTo(0, k*imgW+1+(k-1)*2);
-		        	droppedImageContext.lineTo(canvasWidth, k*imgW+1+(k-1)*2);
+		        for(var k = 1; k <= Math.ceil(imgNH/imgNW/Math.floor(700/(tileW)+2)); k++){
+		        	droppedImageContext.moveTo(0, k*tileW+1+(k-1)*2);
+		        	droppedImageContext.lineTo(canvasWidth, k*tileW+1+(k-1)*2);
 		        }
 		        droppedImageContext.strokeStyle = '#00969C';
 		        droppedImageContext.lineWidth = 2;
 		        droppedImageContext.stroke();
-		        /*
-		        // Create canvas for image
-		        var droppedImageCanvas = document.createElement("canvas");
-		        droppedImageCanvas.width = droppedImage.naturalWidth;
-		        droppedImageCanvas.height = droppedImage.naturalHeight;
 		        
-		        // Create code container
-		        //var droppedImageCode = document.createElement("div");
-		        var droppedImageCode = document.createElement("textarea");
-		        droppedImageCode.className = "code";
-
-		        droppedImageCode.style.width = "698px";
-		        droppedImageCode.rows = "20";
-		        
-		        // Create div container
-		        var droppedImageDiv = document.createElement("div");
-		        droppedImageDiv.className = "image-view";
-		        droppedImageDiv.appendChild(droppedImageCanvas);
-		        
-		        var imageContainer = document.getElementById("image-container");
-		        imageContainer.innerHTML = "";
-		        imageContainer.appendChild(droppedImageDiv);
-		        imageContainer.appendChild(document.createElement("br"));
-		        imageContainer.appendChild(droppedImageCode);
-		        
-		        // Create context for drawing
-		        var droppedImageContext = droppedImageCanvas.getContext("2d");
-		        
-		        // Draw the image
-		        droppedImageContext.drawImage(droppedImage, 0, 0);
-				*/
 		        // Generate the sprite string
-		        //var spriteString = "{<br />&#09;";
 		        var spriteString = "const unsigned char PROGMEM "+imageData.name.split('.')[0]+"[] =\n"+
-		        				   "{\n// width, height,\n"+droppedImage.naturalWidth+", "+droppedImage.naturalWidth+",\n"+
+		        				   "{\n// width, height,\n"+imgNW+", "+imgNW+",\n"+
 		        				   "// TILE 00\n";
 		        
-		        var pageCount = Math.ceil(droppedImage.naturalHeight / 8);
-		        var columnCount = droppedImage.naturalWidth;
+		        var pageCount = Math.ceil(imgNH / 8);
+		        var columnCount = imgNW;
 		        var currentByte = 0;
 		        var rowCounter = 0;
 		        var tileCounter = 0;
@@ -230,10 +182,9 @@
 		                }
 		                spriteString += "0x" + digitStr + ", ";
 		                if(currentByte%8 == 7) {
-							//spriteString += "<br />&#09;";
 							spriteString += "\n";
 							rowCounter++;
-							if(rowCounter == Math.pow(droppedImage.naturalWidth/8, 2) && tileCounter < droppedImage.naturalHeight/droppedImage.naturalWidth -1){
+							if(rowCounter == Math.pow(imgNW/8, 2) && tileCounter < imgNH/imgNW -1){
 								tileCounter++;
 								var tileNumber = tileCounter.toString().length === 1 ? "0"+tileCounter.toString() : tileCounter.toString();
 								spriteString += "// TILE "+tileNumber+"\n";
@@ -250,31 +201,10 @@
 		    };
 		    reader.readAsDataURL(imageData);
 		}
-		function getClippedRegion(image, x, y, width, height, zoom) {
-		    var canvas = document.createElement('canvas'),
-		        ctx = canvas.getContext('2d');
-		
-		    canvas.width = width * zoom;
-		    canvas.height = height * zoom;
-		
-		    //                   source region         dest. region
-		    ctx.drawImage(image, x, y, width, height,  0, 0, width * zoom, height * zoom);
-		
-		    return canvas;
-		}
     </script>
 </head>
 
 <body onload="setup(this);" style="font-family: Courier New; text-align: center;">
-	<!-- <div class='modal' id='modal'>
-		<div class='modal-content'>
-			<label>Tile width: </label><input type='number' id='tileW' size='2' value='8' min='1' max='16'>
-			<br>
-			<label>Tile height: </label><input type='number' id='tileH' size='2' value='8' min='1' max='16'>
-			<br>
-			<button id='btn' onclick='document.getElementById("modal").style.display="none";'>Confirm</button>
-		</div>
-	</div> -->
 	<div class="shadow">
 		<div class="container" style="height:1070px">
 
