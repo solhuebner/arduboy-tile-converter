@@ -148,7 +148,7 @@
 		        droppedImageContext.stroke();
 		        
 		        // Generate the sprite string
-		        var spriteString = "const unsigned char PROGMEM "+imageData.name.split('.')[0]+"[] =\n"+
+		        var spriteString = "const unsigned char PROGMEM "+imageData.name.split('_')[0]+"[] =\n"+
 		        				   "{\n// width, height,\n"+imgNW+", "+imgNW+",\n"+
 		        				   "// TILE 00\n";
 		        
