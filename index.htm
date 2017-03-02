@@ -27,6 +27,7 @@
         	padding:0px;
         	background-color: #FEFEFC;
         	border: 1px solid #463C3C;
+        	white-space: pre;
         }
 	</style>
 	<script language="JavaScript">
@@ -181,10 +182,10 @@
 		                    digitStr = "0" + digitStr;
 		                }
 		                spriteString += "0x" + digitStr + ", ";
-		                if(currentByte%8 == 7) {
+		                if(currentByte%imgNW == imgNW-1){
 							spriteString += "\n";
 							rowCounter++;
-							if(rowCounter == Math.pow(imgNW/8, 2) && tileCounter < imgNH/imgNW -1){
+							if(rowCounter == imgNW/8 && tileCounter < imgNH/imgNW - 1){
 								tileCounter++;
 								var tileNumber = tileCounter.toString().length === 1 ? "0"+tileCounter.toString() : tileCounter.toString();
 								spriteString += "// TILE "+tileNumber+"\n";
